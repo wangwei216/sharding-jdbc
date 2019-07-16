@@ -90,11 +90,11 @@ public class ShardingJdbcConfig {
 //                new InlineShardingStrategyConfiguration("id","sharding_${id % 2}");
 //        result.setDatabaseShardingStrategyConfig(datebaseStrategy);
 
-        //这个是使用定义的精准算法进行分片，对分不同的数据库的自定义实现
+        //这个是使用定义的精准算法进行分片，对【通过自定义策略实现userId分到不同的数据库中】
         MyDatabaseStandardShardingStrategy myDatabaseStandardShardingStrategy = new MyDatabaseStandardShardingStrategy();
         StandardShardingStrategyConfiguration strategyConfiguration =
                 new StandardShardingStrategyConfiguration("user_id", myDatabaseStandardShardingStrategy);
-        //这里是可以实现对分表的自定义是实现把不同的UserId分到不同的表中
+        //这里是可以实现对分表的自定义【通过age分到不同的表中】实现把不同的UserId分到不同的表中
         MyTableShardingStrategy tableShardingStrategy = new MyTableShardingStrategy();
         StandardShardingStrategyConfiguration tableStrategyConfiguration =
                 new StandardShardingStrategyConfiguration("age", tableShardingStrategy);
