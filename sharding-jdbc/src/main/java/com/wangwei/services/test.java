@@ -3,8 +3,13 @@
  */
 package com.wangwei.services;
 
+import com.alibaba.fastjson.JSONArray;
 import com.wangwei.entity.User;
 import org.apache.shardingsphere.core.constant.properties.ShardingPropertiesConstant;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @FileName: test.java
@@ -24,5 +29,14 @@ public class test {
         String str4 = "wangwei123";
         System.out.println(str3 == str4);
 
+
+        String[] strings = {"123","werr"};
+        System.out.println(Arrays.toString(strings));
+
+        Set productSet = new HashSet();
+        productSet.add("md_capcha");
+        productSet.add("md_dataworks");
+        String productJson = JSONArray.toJSONString(productSet);
+        System.out.println("打印JSON："+productJson);
     }
 }

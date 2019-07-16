@@ -8,24 +8,13 @@ import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.shardingsphere.api.config.sharding.KeyGeneratorConfiguration;
 import org.apache.shardingsphere.api.config.sharding.ShardingRuleConfiguration;
 import org.apache.shardingsphere.api.config.sharding.TableRuleConfiguration;
-import org.apache.shardingsphere.api.config.sharding.strategy.HintShardingStrategyConfiguration;
 import org.apache.shardingsphere.api.config.sharding.strategy.InlineShardingStrategyConfiguration;
-import org.apache.shardingsphere.api.config.sharding.strategy.ShardingStrategyConfiguration;
 import org.apache.shardingsphere.api.config.sharding.strategy.StandardShardingStrategyConfiguration;
-import org.apache.shardingsphere.api.sharding.standard.PreciseShardingAlgorithm;
-import org.apache.shardingsphere.api.sharding.standard.RangeShardingAlgorithm;
 import org.apache.shardingsphere.core.constant.properties.ShardingPropertiesConstant;
-import org.apache.shardingsphere.core.strategy.route.inline.InlineShardingStrategy;
 import org.apache.shardingsphere.shardingjdbc.api.ShardingDataSourceFactory;
-import org.apache.shardingsphere.shardingjdbc.jdbc.core.datasource.ShardingDataSource;
-import org.mybatis.spring.SqlSessionFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.core.io.support.ResourcePatternResolver;
-
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -57,21 +46,22 @@ public class ShardingJdbcConfig {
         //这里是相当于给每一个策略再额外添加一个默认的分库或者是分表的策略,这里默认是都写到另一个库中
 //        shardingRuleConfig.setDefaultDatabaseShardingStrategyConfig(new InlineShardingStrategyConfiguration("id", "sharding_0.$->{id % 3}"));
 //        shardingRuleConfig.setDefaultTableShardingStrategyConfig(new InlineShardingStrategyConfiguration("student_id","sharding_${student_id % 2}"));
-        return ShardingDataSourceFactory.createDataSource(createDataSourceMap(),shardingRuleConfig,new Properties());
+        return ShardingDataSourceFactory.createDataSource(createDataSourceMap(), shardingRuleConfig, new Properties());
     }
 
 
     /**
      * 这个是给学生表设置分库
+     *
      * @return
      */
     @Bean
     TableRuleConfiguration getStudentTableRuleConfiguration() {
         //设置逻辑表名称的分片
         // 这里是用配置行表达式分片策略:${['online', 'offline']}_table${1..3} 其实是拼接的online_table1, online_table2, online_table3
-        TableRuleConfiguration tableRuleConfiguration = new TableRuleConfiguration("t_student","sharding_$->{0..1}.t_user_${1..3}");
+        TableRuleConfiguration tableRuleConfiguration = new TableRuleConfiguration("t_student", "sharding_$->{0..1}.t_user_${1..3}");
         InlineShardingStrategyConfiguration inlineShardingStrategy =
-                new InlineShardingStrategyConfiguration("class_id","sharding_$->{class_id % 2}");
+                new InlineShardingStrategyConfiguration("class_id", "sharding_$->{class_id % 2}");
 
         //这个是给表规则配置设置表的分片策略：
         tableRuleConfiguration.setDatabaseShardingStrategyConfig(inlineShardingStrategy);
@@ -80,12 +70,13 @@ public class ShardingJdbcConfig {
 
     /**
      * 给User表设置分库分表的规则
+     *
      * @return
      */
     @Bean
     TableRuleConfiguration getUserTableRuleConfiguration() {
         //这个逻辑表意思就是你正常业务中查询用的表名,后面是使用groove的表达式进行散落到真实的不同的表中
-        TableRuleConfiguration result = new TableRuleConfiguration("t_user","sharding_$->{0}.t_user_${0..2}");
+        TableRuleConfiguration result = new TableRuleConfiguration("t_user", "sharding_$->{0..1}.t_user_${0..2}");
 
         //这里是进行把分表分库之后进行分片操作的策略对象都实现了 ShardingStrategyConfiguration 的接口
         // 1.StandardShardingStrategyConfiguration(标准单分片策略)   2.ComplexShardingStrategyConfiguration(复合分片策略)
@@ -99,33 +90,39 @@ public class ShardingJdbcConfig {
 //                new InlineShardingStrategyConfiguration("id","sharding_${id % 2}");
 //        result.setDatabaseShardingStrategyConfig(datebaseStrategy);
 
-        //这个是使用定义的算法进行分片
-        MyStandardShardingStrategy myStandardShardingStrategy = new MyStandardShardingStrategy();
-        StandardShardingStrategyConfiguration strategyConfiguration = new StandardShardingStrategyConfiguration("user_id",myStandardShardingStrategy);
-        result.setTableShardingStrategyConfig(strategyConfiguration);
+        //这个是使用定义的精准算法进行分片，对分不同的数据库的自定义实现
+        MyDatabaseStandardShardingStrategy myDatabaseStandardShardingStrategy = new MyDatabaseStandardShardingStrategy();
+        StandardShardingStrategyConfiguration strategyConfiguration =
+                new StandardShardingStrategyConfiguration("user_id", myDatabaseStandardShardingStrategy);
+        //这里是可以实现对分表的自定义是实现把不同的UserId分到不同的表中
+        MyTableShardingStrategy tableShardingStrategy = new MyTableShardingStrategy();
+        StandardShardingStrategyConfiguration tableStrategyConfiguration =
+                new StandardShardingStrategyConfiguration("age", tableShardingStrategy);
 
+        result.setTableShardingStrategyConfig(tableStrategyConfiguration);
+        result.setDatabaseShardingStrategyConfig(strategyConfiguration);
 
         //设置自增主键,使用的雪花算法，除此之外还有 SNOWFLAKE/ UUID / LEAF_SEGMENT（美团的）
         Properties properties = new Properties();
-        properties.setProperty(ShardingPropertiesConstant.SQL_SHOW.getKey(),"true");
-        KeyGeneratorConfiguration keyGeneratorConfiguration = new KeyGeneratorConfiguration("UUID","id",properties);
+        properties.setProperty(ShardingPropertiesConstant.SQL_SHOW.getKey(), "true");
+        KeyGeneratorConfiguration keyGeneratorConfiguration = new KeyGeneratorConfiguration("UUID", "id", properties);
 //        result.setKeyGeneratorConfig(keyGeneratorConfiguration);
         return result;
     }
 
     /**
      * 创建真实数据源的map集合
+     *
      * @return
      */
     private static Map<String, DataSource> createDataSourceMap() {
         Map<String, DataSource> result = new HashMap<>(2);
-        result.put("sharding_0",  createDataSource("sharding_0"));
-        result.put("sharding_1",  createDataSource("sharding_1"));
+        result.put("sharding_0", createDataSource("sharding_0"));
+        result.put("sharding_1", createDataSource("sharding_1"));
         return result;
     }
 
     /**
-     *
      * @param dataSourceName
      * @return
      */
@@ -136,7 +133,7 @@ public class ShardingJdbcConfig {
         result.setUsername("root");
         // sharding-jdbc默认以密码为空的root用户访问，如果修改了root用户的密码，这里修改为真实的密码即可；
         result.setPassword("root");
-      return result;
+        return result;
     }
 
 

@@ -42,7 +42,7 @@ public class ShardingJdbcApplicationTests {
     public void insert(){
         for (int i = 1; i < 10; i++) {
             User u = new User();
-            u.setUserId(i); //这个相当userId
+            u.setUserId(100+i); //这个相当userId
             u.setAge(100 + i);
             u.setName("王伟"+i);
             int result = userMapper.insert(u);
