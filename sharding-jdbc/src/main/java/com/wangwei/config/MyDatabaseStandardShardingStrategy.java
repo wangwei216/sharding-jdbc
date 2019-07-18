@@ -3,12 +3,9 @@
  */
 package com.wangwei.config;
 
-import org.apache.shardingsphere.api.sharding.complex.ComplexKeysShardingAlgorithm;
-import org.apache.shardingsphere.api.sharding.complex.ComplexKeysShardingValue;
+
 import org.apache.shardingsphere.api.sharding.standard.PreciseShardingAlgorithm;
 import org.apache.shardingsphere.api.sharding.standard.PreciseShardingValue;
-import org.apache.shardingsphere.api.sharding.standard.RangeShardingAlgorithm;
-import org.apache.shardingsphere.api.sharding.standard.RangeShardingValue;
 
 
 import java.util.Collection;
@@ -33,12 +30,12 @@ public class MyDatabaseStandardShardingStrategy implements PreciseShardingAlgori
     public String doSharding(Collection<String> availableTargetNames, PreciseShardingValue<Integer> preciseShardingValue) {
         System.out.println("【分库集合为】------》" + availableTargetNames.toString());
         for (String dateBase : availableTargetNames) {
-            if (dateBase.contains("_0") && (preciseShardingValue.getValue()) % 2 ==0){
-                System.out.println("入库到库中【0】------>"+dateBase+"【user_id为】"+preciseShardingValue.getValue());
+            if (dateBase.contains("_0") && (preciseShardingValue.getValue()) % 2 == 0) {
+                System.out.println("入库到库中【0】------>" + dateBase + "【user_id为】" + preciseShardingValue.getValue());
                 return dateBase;
             }
-            if (dateBase.contains("_1") && (preciseShardingValue.getValue()) % 2 ==1){
-                System.out.println("入库到库中【1】"+dateBase+"【user_id为】"+preciseShardingValue.getValue());
+            if (dateBase.contains("_1") && (preciseShardingValue.getValue()) % 2 == 1) {
+                System.out.println("入库到库中【1】" + dateBase + "【user_id为】" + preciseShardingValue.getValue());
                 return dateBase;
             }
         }

@@ -28,7 +28,7 @@ import java.util.Properties;
  * @Author: wangwei
  * @Date: 2019/7/10 9:40
  */
-@Configuration
+//@Configuration
 public class ShardingJdbcConfig {
 
     @Bean
@@ -43,10 +43,14 @@ public class ShardingJdbcConfig {
 //        shardingRuleConfig.getBindingTableGroups().add("t_user, t_common");
         //广播表规则列表
 //        shardingRuleConfig.getBroadcastTables().add("t_config");
+        //对未配置分片规则的表将通过默认数据源定位
+        shardingRuleConfig.setDefaultDataSourceName("sharding-jdbc");
         //这里是相当于给每一个策略再额外添加一个默认的分库或者是分表的策略,这里默认是都写到另一个库中
 //        shardingRuleConfig.setDefaultDatabaseShardingStrategyConfig(new InlineShardingStrategyConfiguration("id", "sharding_0.$->{id % 3}"));
 //        shardingRuleConfig.setDefaultTableShardingStrategyConfig(new InlineShardingStrategyConfiguration("student_id","sharding_${student_id % 2}"));
-        return ShardingDataSourceFactory.createDataSource(createDataSourceMap(), shardingRuleConfig, new Properties());
+        Properties properties = new Properties();
+        properties.setProperty(ShardingPropertiesConstant.SQL_SHOW.getKey(), "true");
+        return ShardingDataSourceFactory.createDataSource(createDataSourceMap(), shardingRuleConfig, properties);
     }
 
 
@@ -116,9 +120,10 @@ public class ShardingJdbcConfig {
      * @return
      */
     private static Map<String, DataSource> createDataSourceMap() {
-        Map<String, DataSource> result = new HashMap<>(2);
+        Map<String, DataSource> result = new HashMap<>(3);
         result.put("sharding_0", createDataSource("sharding_0"));
         result.put("sharding_1", createDataSource("sharding_1"));
+        result.put("sharding-jdbc", createDataSource("sharding-jdbc"));
         return result;
     }
 
@@ -128,7 +133,7 @@ public class ShardingJdbcConfig {
      */
     private static DataSource createDataSource(final String dataSourceName) {
         BasicDataSource result = new BasicDataSource();
-        result.setDriverClassName(com.mysql.jdbc.Driver.class.getName());
+        result.setDriverClassName(com.mysql.cj.jdbc.Driver.class.getName());
         result.setUrl(String.format("jdbc:mysql://localhost:3306/%s?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&serverTimezone=UTC", dataSourceName));
         result.setUsername("root");
         // sharding-jdbc默认以密码为空的root用户访问，如果修改了root用户的密码，这里修改为真实的密码即可；
