@@ -1,4 +1,4 @@
-# sharding-jdbc
+# sharding-jdbc的使用和配置以及详细的配置注释
 使用sharding-jdbc完成分库分表的配置和详细的代码演示，主要完成了以下功能
 
 1. 对分库分表的基本使用和配置
