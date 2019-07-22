@@ -4,6 +4,7 @@ import com.wangwei.dao.StudentMapper;
 import com.wangwei.dao.TeacherMapper;
 import com.wangwei.dao.UserMapper;
 import com.wangwei.entity.Student;
+import com.wangwei.entity.StudentExample;
 import com.wangwei.entity.Teacher;
 import com.wangwei.entity.User;
 import com.wangwei.entity.UserExample;
@@ -17,8 +18,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -38,11 +37,17 @@ public class ShardingJdbcApplicationTests {
         UserExample userExample = new UserExample();
         UserExample.Criteria criteria = userExample.createCriteria();
        criteria.andIdBetween(100,240);
-        userExample.setOrderByClause("age DESC");
+        userExample.setOrderByClause("age ASC");
         List<User> userList = userMapper.selectByExample(userExample);
         userList.forEach(item -> System.out.println(item.toString()));
     }
 
+    /**
+     * @Author: wangwei
+     * @Description: 这个是测试读写分离的老师表
+     * @Param:  * @Param: null
+     * @Date: 2019-07-22
+     */
     @Test
     public void selectTeacherList(){
         Teacher teacher = new Teacher();
@@ -50,6 +55,26 @@ public class ShardingJdbcApplicationTests {
         teacherList.forEach(teacherItem -> System.out.println("遍历打印teacher信息："+teacherItem.toString()));
     }
 
+    /**
+     * @Author: wangwei
+     * @Description: 这个是用来测试Student表中的范围查询的
+     * @Param:  * @Param: null
+     * @Date: 2019-07-19
+     */
+    @Test
+    public void selectStudent(){
+        StudentExample studentExample = new StudentExample();
+        StudentExample.Criteria criteria = studentExample.createCriteria();
+        List<Student> studentList = studentMapper.selectByExample(studentExample);
+        studentList.forEach(student -> System.out.println(student.toString()));
+    }
+
+    /**
+     * @Author: wangwei
+     * @Description: 测试读写分离的写主库操作
+     * @Param:  * @Param: null
+     * @Date: 2019-07-22
+     */
     @Test
     public void insertTeacher(){
         for (int i = 1;i <= 10 ;i++){
@@ -60,6 +85,9 @@ public class ShardingJdbcApplicationTests {
             int result = teacherMapper.insert(teacher);
             System.out.println("影响数据库的行数："+result);
         }
+        Teacher teacher = new Teacher();
+        List<Teacher> teacherList = teacherMapper.selectByExample(teacher);
+        teacherList.forEach(teacher1 -> System.out.println("打印插入之后的老师信息-------->"+teacher1.toString()));
 
     }
 

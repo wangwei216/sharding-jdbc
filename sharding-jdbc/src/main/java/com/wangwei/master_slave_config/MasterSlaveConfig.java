@@ -31,7 +31,7 @@ import java.util.Properties;
  * @Author: wangwei
  * @Date: 2019/7/18 11:01
  */
-@Configuration
+//@Configuration
 public class MasterSlaveConfig {
 
     /**
@@ -80,7 +80,6 @@ public class MasterSlaveConfig {
         result.setDriverClassName(com.mysql.cj.jdbc.Driver.class.getName());
         result.setUrl(String.format("jdbc:mysql://localhost:3306/%s?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&serverTimezone=UTC", dataSourceName));
         result.setUsername("root");
-        // sharding-jdbc默认以密码为空的root用户访问，如果修改了root用户的密码，这里修改为真实的密码即可；
         result.setPassword("root");
         return result;
     }
