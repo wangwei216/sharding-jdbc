@@ -51,6 +51,7 @@ public class MasterSlaveConfig {
         System.out.println("打印从库的负载均衡算法---------->"+randomLoadBalanceAlgorithm.getType());
         MasterSlaveRuleConfiguration masterSlaveRuleConfig =
                 new MasterSlaveRuleConfiguration("ds_master_slave", "ds_master",slaveDatebaseNameList ,loadBalanceConfiguration);
+
         //这个是配置一些SQL打印等附加配置
         Properties properties = new Properties();
         properties.setProperty(ShardingPropertiesConstant.SQL_SHOW.getKey(), "true");

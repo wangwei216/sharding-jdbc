@@ -77,9 +77,9 @@ public class ShardingJdbcApplicationTests {
      */
     @Test
     public void insertTeacher(){
-        for (int i = 1;i <= 10 ;i++){
+        for (int i = 1;i <= 10;i++){
             Teacher teacher = new Teacher();
-            teacher.setAge(10+i);
+            teacher.setAge(i);
             teacher.setName("老师【"+i);
             teacher.setTeacherId(10+i);
             int result = teacherMapper.insert(teacher);

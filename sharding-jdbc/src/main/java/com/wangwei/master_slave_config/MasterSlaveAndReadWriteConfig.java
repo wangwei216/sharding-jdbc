@@ -53,21 +53,40 @@ public class MasterSlaveAndReadWriteConfig {
         shardingRuleConfiguration.setMasterSlaveRuleConfigs(getMasterSlaveRuleConfigurations());
         //为了把具体的分库分表的配置策略给注入
         tableRuleConfigs.add(getTeacherTableRuleConfiguration());
+        shardingRuleConfiguration.setTableRuleConfigs(tableRuleConfigs);
+        //这是配置默认的数据库
+        shardingRuleConfiguration.setDefaultDataSourceName("sharding-jdbc");
         //这个是配置一些SQL打印等附加配置
         Properties properties = new Properties();
         properties.setProperty(ShardingPropertiesConstant.SQL_SHOW.getKey(), "true");
         return ShardingDataSourceFactory.createDataSource(createDataSourceMap(), shardingRuleConfiguration, properties);
     }
 
+    /**
+     * @Author: wangwei
+     * @Description: 这里主要是进行配置
+     * @Param:  * @Param: null
+     * @Date: 2019-07-22
+     */
     @Bean
     TableRuleConfiguration getTeacherTableRuleConfiguration(){
         TableRuleConfiguration tableRuleConfiguration =
-                new TableRuleConfiguration("teacher","ds_$->{0..1}.teacher_${[0, 1]}");
-        //这里配置分库分表的一些策略，是取模还是嗯呢的
-        InlineShardingStrategyConfiguration inlineShardingStrategyConfiguration =
-                new InlineShardingStrategyConfiguration("teacher_id","teacher_${teacher_id % 2}");
-        //这里不仅可以以Grooy表达式来进行配置分表的表达式，还可以配置分库的表达式
-        tableRuleConfiguration.setTableShardingStrategyConfig(inlineShardingStrategyConfiguration);
+                new TableRuleConfiguration("teacher","db_$->{0..1}.teacher_$->{0..1}");
+        //这里是配置分库的配置策略
+        ShardingStrategyConfiguration databaseShardingStrategyConfiguration =
+                new InlineShardingStrategyConfiguration("age","db_$->{age % 2}");
+//        tableRuleConfiguration.setDatabaseShardingStrategyConfig(databaseShardingStrategyConfiguration);
+        //这里配置分表的一些策略，是取模不仅可以以Grooy表达式来进行配置分表的表达式，还可以配置分库的表达式
+        InlineShardingStrategyConfiguration tableShardingStrategyConfiguration =
+                new InlineShardingStrategyConfiguration("teacher_id","teacher_$->{teacher_id % 2}");
+
+        //进行自定义的分库策略
+        MyMasterSlaveReadWriteShardingStrategy masterSlaveReadWriteShardingStrategy = new MyMasterSlaveReadWriteShardingStrategy();
+        StandardShardingStrategyConfiguration standardShardingStrategyConfiguration =
+                new StandardShardingStrategyConfiguration("teacher_id",masterSlaveReadWriteShardingStrategy);
+//        tableRuleConfiguration.setTableShardingStrategyConfig(tableShardingStrategyConfiguration);
+        tableRuleConfiguration.setDatabaseShardingStrategyConfig(standardShardingStrategyConfiguration);
+
         return tableRuleConfiguration;
     }
 
@@ -83,14 +102,17 @@ public class MasterSlaveAndReadWriteConfig {
         //正常sharding-jdbc有两种从库的负载均衡算法策略，一种是随机算法，一种是轮循算法
         RandomMasterSlaveLoadBalanceAlgorithm randomLoadBalanceAlgorithm = new RandomMasterSlaveLoadBalanceAlgorithm();
         RoundRobinMasterSlaveLoadBalanceAlgorithm roundRobinMasterSlaveLoadBalance = new RoundRobinMasterSlaveLoadBalanceAlgorithm();
-        LoadBalanceStrategyConfiguration loadBalanceConfiguration = new LoadBalanceStrategyConfiguration(roundRobinMasterSlaveLoadBalance.getType());
+        Properties properties = new Properties();
+        properties.setProperty(ShardingPropertiesConstant.SQL_SHOW.getKey(),"true");
+        properties.setProperty(ShardingPropertiesConstant.SQL_SIMPLE.getKey(),"true");
+        LoadBalanceStrategyConfiguration loadBalanceConfiguration = new LoadBalanceStrategyConfiguration(roundRobinMasterSlaveLoadBalance.getType(),properties);
         System.out.println("打印从库的负载均衡算法---------->"+roundRobinMasterSlaveLoadBalance.getType());
-        //这里是配置主从复制的配置
+        //这里是配置读写分离的配置
         MasterSlaveRuleConfiguration masterSlaveRuleConfig1 =
-                new MasterSlaveRuleConfiguration("ds_0", "db0_master0",
-                Arrays.asList("db0_slave0", "db0_slave1"),loadBalanceConfiguration);
+                new MasterSlaveRuleConfiguration("db_0", "db0_master0",
+                Arrays.asList("db0_slave1", "db0_slave0"),loadBalanceConfiguration);
         MasterSlaveRuleConfiguration masterSlaveRuleConfig2 =
-                new MasterSlaveRuleConfiguration("ds_1", "db1_master1",
+                new MasterSlaveRuleConfiguration("db_1", "db1_master1",
                         Arrays.asList("db1_slave0", "db1_slave1"),loadBalanceConfiguration);
         return Lists.newArrayList(masterSlaveRuleConfig1, masterSlaveRuleConfig2);
     }
@@ -102,7 +124,7 @@ public class MasterSlaveAndReadWriteConfig {
      * @Date: 2019-07-18
      */
     Map<String, DataSource> createDataSourceMap() {
-        Map<String, DataSource> result = new HashMap<>(6);
+        Map<String, DataSource> result = new HashMap<>(9);
         //主从库0
         result.put("db0_master0", MasterSlaveAndReadWriteConfig.createDataSource("db0_master0"));
         result.put("db0_slave0", MasterSlaveAndReadWriteConfig.createDataSource("db0_slave0"));
@@ -111,6 +133,8 @@ public class MasterSlaveAndReadWriteConfig {
         result.put("db1_master1", MasterSlaveAndReadWriteConfig.createDataSource("db1_master1"));
         result.put("db1_slave0", MasterSlaveAndReadWriteConfig.createDataSource("db1_slave0"));
         result.put("db1_slave1", MasterSlaveAndReadWriteConfig.createDataSource("db1_slave1"));
+        //配置默认的数据库
+        result.put("sharding-jdbc", MasterSlaveAndReadWriteConfig.createDataSource("sharding-jdbc"));
         return result;
     }
 

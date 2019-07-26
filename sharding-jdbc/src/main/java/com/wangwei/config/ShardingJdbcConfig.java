@@ -8,13 +8,13 @@ import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.shardingsphere.api.config.sharding.KeyGeneratorConfiguration;
 import org.apache.shardingsphere.api.config.sharding.ShardingRuleConfiguration;
 import org.apache.shardingsphere.api.config.sharding.TableRuleConfiguration;
-import org.apache.shardingsphere.api.config.sharding.strategy.InlineShardingStrategyConfiguration;
-import org.apache.shardingsphere.api.config.sharding.strategy.ShardingStrategyConfiguration;
 import org.apache.shardingsphere.api.config.sharding.strategy.StandardShardingStrategyConfiguration;
 import org.apache.shardingsphere.api.hint.HintManager;
 import org.apache.shardingsphere.core.constant.properties.ShardingPropertiesConstant;
 import org.apache.shardingsphere.shardingjdbc.api.ShardingDataSourceFactory;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -46,6 +46,7 @@ public class ShardingJdbcConfig {
         //这个是配置强制路由的操作
         HintManager hintManager = HintManager.getInstance();
         hintManager.addDatabaseShardingValue("t_user","1");
+        hintManager.close();
 
         //广播表规则列表
 //        shardingRuleConfig.getBroadcastTables().add("t_config");
